@@ -1,0 +1,84 @@
+# Base44 dev environment for Aboni (React/Vite frontend + NestJS backend + MySQL).
+# Single-origin wiring: only port 3000 is public (Vite dev server proxies /api & /uploads to the backend).
+services:
+  db:
+    image: mysql:8
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: "636363"
+      MYSQL_DATABASE: aboni
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p636363"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - db_data:/var/lib/mysql
+
+  backend-setup:
+    image: node:22
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+      - backend_node_modules:/app/node_modules
+    environment:
+      PORT: "5000"
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_USER: root
+      DB_PASSWORD: "636363"
+      DB_NAME: aboni
+      JWT_SECRET: aboni-base44-dev-secret
+      JWT_EXPIRES: 7d
+      UPLOAD_DIR: uploads
+      FRONTEND_URL: "https://3000-${BASE44_PUBLIC_HOST_SUFFIX}"
+      NODE_ENV: development
+    depends_on:
+      db:
+        condition: service_healthy
+    command: sh -c "npm install && npm run migrate && npm run seed"
+
+  backend:
+    image: node:22
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+      - backend_node_modules:/app/node_modules
+    environment:
+      PORT: "5000"
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_USER: root
+      DB_PASSWORD: "636363"
+      DB_NAME: aboni
+      JWT_SECRET: aboni-base44-dev-secret
+      JWT_EXPIRES: 7d
+      UPLOAD_DIR: uploads
+      FRONTEND_URL: "https://3000-${BASE44_PUBLIC_HOST_SUFFIX}"
+      NODE_ENV: development
+    depends_on:
+      db:
+        condition: service_healthy
+      backend-setup:
+        condition: service_completed_successfully
+    command: sh -c "npm install && npm run start:dev"
+
+  frontend:
+    image: node:22
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    environment:
+      API_PROXY_TARGET: "http://backend:5000"
+    ports:
+      - "3000:5173"
+    depends_on:
+      backend:
+        condition: service_started
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+
+volumes:
+  db_data:
+  backend_node_modules:
+  frontend_node_modules:

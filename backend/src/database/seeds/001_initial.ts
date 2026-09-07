@@ -1,0 +1,171 @@
+import { Knex } from 'knex';
+import * as bcrypt from 'bcrypt';
+
+export async function seed(knex: Knex): Promise<void> {
+  await knex('orders').del();
+  await knex('password_resets').del();
+  await knex('contacts').del();
+  await knex('newsletters').del();
+  await knex('products').del();
+  await knex('users').del();
+
+  const superHash = await bcrypt.hash('Admin@1234', 10);
+  const staffHash = await bcrypt.hash('Staff@1234', 10);
+  const userHash = await bcrypt.hash('User@1234', 10);
+
+  await knex('users').insert([
+    {
+      email: 'admin@aboni.dz',
+      password_hash: superHash,
+      name: 'Super Admin',
+      role: 'super_admin',
+      permissions: JSON.stringify({
+        products: true,
+        orders: true,
+        users: true,
+        contacts: true,
+        newsletter: true,
+        analytics: true,
+      }),
+      is_active: true,
+    },
+    {
+      email: 'staff@aboni.dz',
+      password_hash: staffHash,
+      name: 'Staff Admin',
+      role: 'admin',
+      permissions: JSON.stringify({
+        products: true,
+        orders: true,
+        users: false,
+        contacts: true,
+        newsletter: true,
+        analytics: false,
+      }),
+      is_active: true,
+    },
+    {
+      email: 'user@aboni.dz',
+      password_hash: userHash,
+      name: 'Demo User',
+      role: 'user',
+      permissions: null,
+      is_active: true,
+    },
+  ]);
+
+  await knex('products').insert([
+    {
+      slug: 'spotify-premium',
+      name_en: 'Spotify Premium',
+      name_fr: 'Spotify Premium',
+      name_ar: 'سبوتيفاي بريميوم',
+      description_en: 'Ad-free music streaming with offline downloads.',
+      description_fr: 'Streaming musical sans publicité avec téléchargements hors ligne.',
+      description_ar: 'بث موسيقى بدون إعلانات مع تنزيلات دون اتصال.',
+      logo_url: 'https://cdn.simpleicons.org/spotify/1DB954',
+      category: 'spotify',
+      price: 1200.0,
+      currency: 'DZD',
+      duration_days: 30,
+      is_active: true,
+      stock: 999,
+    },
+    {
+      slug: 'netflix',
+      name_en: 'Netflix',
+      name_fr: 'Netflix',
+      name_ar: 'نتفليكس',
+      description_en: 'Watch movies and series in HD.',
+      description_fr: 'Regardez films et séries en HD.',
+      description_ar: 'شاهد الأفلام والمسلسلات بجودة عالية.',
+      logo_url: 'https://cdn.simpleicons.org/netflix/E50914',
+      category: 'netflix',
+      price: 2500.0,
+      currency: 'DZD',
+      duration_days: 30,
+      is_active: true,
+      stock: 999,
+    },
+    {
+      slug: 'playstation-plus',
+      name_en: 'PlayStation Plus',
+      name_fr: 'PlayStation Plus',
+      name_ar: 'بلايستيشن بلس',
+      description_en: 'Online multiplayer and monthly games.',
+      description_fr: 'Multijoueur en ligne et jeux mensuels.',
+      description_ar: 'لعب جماعي عبر الإنترنت وألعاب شهرية.',
+      logo_url: 'https://cdn.simpleicons.org/playstation/0070D1',
+      category: 'playstation',
+      price: 4500.0,
+      currency: 'DZD',
+      duration_days: 30,
+      is_active: true,
+      stock: 999,
+    },
+    {
+      slug: 'xbox-game-pass',
+      name_en: 'Xbox Game Pass',
+      name_fr: 'Xbox Game Pass',
+      name_ar: 'إكس بوكس جيم باس',
+      description_en: 'Hundreds of games on console and PC.',
+      description_fr: 'Des centaines de jeux sur console et PC.',
+      description_ar: 'مئات الألعاب على الكونسول والكمبيوتر.',
+      logo_url: 'https://cdn.simpleicons.org/xbox/107C10',
+      category: 'xbox',
+      price: 3800.0,
+      currency: 'DZD',
+      duration_days: 30,
+      is_active: true,
+      stock: 999,
+    },
+    {
+      slug: 'snapchat-plus',
+      name_en: 'Snapchat+',
+      name_fr: 'Snapchat+',
+      name_ar: 'سناب شات بلس',
+      description_en: 'Exclusive Snapchat features and customizations.',
+      description_fr: 'Fonctionnalités exclusives Snapchat.',
+      description_ar: 'ميزات حصرية لتخصيص سناب شات.',
+      logo_url: 'https://cdn.simpleicons.org/snapchat/FFFC00',
+      category: 'snapchat',
+      price: 900.0,
+      currency: 'DZD',
+      duration_days: 30,
+      is_active: true,
+      stock: 999,
+    },
+    {
+      slug: 'disney-plus',
+      name_en: 'Disney+',
+      name_fr: 'Disney+',
+      name_ar: 'ديزني بلس',
+      description_en: 'Disney, Marvel, Star Wars and more.',
+      description_fr: 'Disney, Marvel, Star Wars et plus.',
+      description_ar: 'ديزني ومارفل وحروب النجوم والمزيد.',
+      logo_url: 'https://cdn.simpleicons.org/disneyplus/113CCF',
+      category: 'disney',
+      price: 2200.0,
+      currency: 'DZD',
+      duration_days: 30,
+      is_active: true,
+      stock: 999,
+    },
+    {
+      slug: 'youtube-premium',
+      name_en: 'YouTube Premium',
+      name_fr: 'YouTube Premium',
+      name_ar: 'يوتيوب بريميوم',
+      description_en: 'Ad-free YouTube with background play.',
+      description_fr: 'YouTube sans pub avec lecture en arrière-plan.',
+      description_ar: 'يوتيوب بدون إعلانات مع التشغيل في الخلفية.',
+      logo_url: 'https://cdn.simpleicons.org/youtube/FF0000',
+      category: 'youtube',
+      price: 1800.0,
+      currency: 'DZD',
+      duration_days: 30,
+      is_active: true,
+      stock: 999,
+    },
+  ]);
+}

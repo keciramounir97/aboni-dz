@@ -19,6 +19,10 @@ export class UsersService {
     return User.query().patchAndFetchById(id, { password_hash });
   }
 
+  async updateName(id: number, name: string) {
+    return User.query().patchAndFetchById(id, { name });
+  }
+
   async list() {
     return User.query().orderBy('created_at', 'desc');
   }

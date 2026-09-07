@@ -4,13 +4,15 @@ import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import { UsersService } from '../users/users.service';
 import { PasswordReset } from './password-reset.model';
-import { RegisterDto, LoginDto, ResetPasswordDto } from './dto/auth.dto';
+import { RegisterDto, LoginDto, ResetPasswordDto, UpdateProfileDto, ChangePasswordDto } from './dto/auth.dto';
+import { ActivityLogService } from '../activity-logs/activity-log.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
+    private readonly activityLogs: ActivityLogService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -96,6 +98,28 @@ export class AuthService {
       throw new UnauthorizedException({ success: false, message: 'Unauthorized' });
     }
     return this.sanitize(user);
+  }
+
+  async updateProfile(userId: number, dto: UpdateProfileDto) {
+    const user = await this.usersService.findById(userId);
+    if (!user) throw new UnauthorizedException({ success: false, message: 'Unauthorized' });
+    if (dto.name) {
+      await this.usersService.updateName(userId, dto.name.trim());
+    }
+    await this.activityLogs.log(userId, user.name, 'profile_updated', 'user', userId);
+    const updated = await this.usersService.findById(userId);
+    return this.sanitize(updated);
+  }
+
+  async changePassword(userId: number, dto: ChangePasswordDto) {
+    const user = await this.usersService.findById(userId);
+    if (!user) throw new UnauthorizedException({ success: false, message: 'Unauthorized' });
+    const match = await bcrypt.compare(dto.currentPassword, user.password_hash);
+    if (!match) throw new BadRequestException({ success: false, message: 'Current password is incorrect' });
+    const password_hash = await bcrypt.hash(dto.newPassword, 10);
+    await this.usersService.updatePassword(userId, password_hash);
+    await this.activityLogs.log(userId, user.name, 'password_changed', 'user', userId);
+    return { message: 'Password updated' };
   }
 
   private async signToken(user: { id: number; email: string; role: string }) {

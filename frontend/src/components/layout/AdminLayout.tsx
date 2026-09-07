@@ -1,13 +1,7 @@
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import {
-  LayoutDashboard,
-  Package,
-  ShoppingCart,
-  Users,
-  Mail,
-  Newspaper,
-  ArrowLeft,
-  Zap,
+  LayoutDashboard, Package, ShoppingCart, Users, Mail, Newspaper, ArrowLeft, Zap,
+  BarChart3, Star, Ticket, FileText, MessageSquare, Activity, UserCog, Type,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useI18n } from '@/i18n/I18nProvider';
@@ -15,20 +9,34 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-const navItems = [
-  { to: '/admin', icon: LayoutDashboard, labelKey: 'dashboard' as const, permission: 'analytics' },
-  { to: '/admin/products', icon: Package, labelKey: 'products' as const, permission: 'products' },
-  { to: '/admin/orders', icon: ShoppingCart, labelKey: 'orders' as const, permission: 'orders' },
-  { to: '/admin/users', icon: Users, labelKey: 'users' as const, permission: 'users' },
-  { to: '/admin/contacts', icon: Mail, labelKey: 'contacts' as const, permission: 'contacts' },
-  { to: '/admin/newsletter', icon: Newspaper, labelKey: 'newsletter' as const, permission: 'newsletter' },
+type NavItem = { to: string; icon: any; labelKey: string; label: string; permission?: string; superOnly?: boolean };
+
+const navItems: NavItem[] = [
+  { to: '/admin', icon: LayoutDashboard, labelKey: 'dashboard', label: 'Dashboard', permission: 'analytics' },
+  { to: '/admin/analytics', icon: BarChart3, labelKey: 'analytics', label: 'Analytics', permission: 'analytics' },
+  { to: '/admin/products', icon: Package, labelKey: 'products', label: 'Products', permission: 'products' },
+  { to: '/admin/orders', icon: ShoppingCart, labelKey: 'orders', label: 'Orders', permission: 'orders' },
+  { to: '/admin/reviews', icon: Star, labelKey: 'reviews', label: 'Reviews', permission: 'orders' },
+  { to: '/admin/coupons', icon: Ticket, labelKey: 'coupons', label: 'Coupons', permission: 'products' },
+  { to: '/admin/users', icon: Users, labelKey: 'users', label: 'Users', permission: 'users' },
+  { to: '/admin/contacts', icon: Mail, labelKey: 'contacts', label: 'Contacts', permission: 'contacts' },
+  { to: '/admin/newsletter', icon: Newspaper, labelKey: 'newsletter', label: 'Newsletter', permission: 'newsletter' },
+  { to: '/admin/blog', icon: FileText, labelKey: 'blog', label: 'Blog', permission: 'products' },
+  { to: '/admin/faqs', icon: Type, labelKey: 'faqs', label: 'FAQs', permission: 'contacts' },
+  { to: '/admin/testimonials', icon: MessageSquare, labelKey: 'testimonials', label: 'Testimonials', permission: 'newsletter' },
+  { to: '/admin/activity', icon: Activity, labelKey: 'activity', label: 'Activity Log', permission: 'analytics' },
+  { to: '/admin/profile', icon: UserCog, labelKey: 'profile', label: 'Profile' },
 ];
 
 export function AdminLayout() {
-  const { t } = useI18n();
-  const { user, logout, hasPermission } = useAuthStore();
+  const { user, logout, hasPermission, isAdmin } = useAuthStore();
 
-  const visibleNav = navItems.filter((item) => hasPermission(item.permission));
+  const isSuperAdmin = user?.role === 'super_admin';
+  const visibleNav = navItems.filter((item) => {
+    if (item.superOnly && !isSuperAdmin) return false;
+    if (item.permission && !isSuperAdmin && !hasPermission(item.permission)) return false;
+    return true;
+  });
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -37,9 +45,9 @@ export function AdminLayout() {
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20 text-primary">
             <Zap className="h-4 w-4" />
           </span>
-          <span className="font-display text-lg font-bold">Aboni Admin</span>
+          <span className="font-display text-lg font-bold">Aboni {isSuperAdmin ? 'Admin+' : 'Admin'}</span>
         </div>
-        <nav className="flex-1 space-y-1 p-4">
+        <nav className="flex-1 space-y-1 overflow-y-auto p-4">
           {visibleNav.map((item) => (
             <NavLink
               key={item.to}
@@ -53,9 +61,14 @@ export function AdminLayout() {
               }
             >
               <item.icon className="h-4 w-4" />
-              {t.admin[item.labelKey]}
+              {item.label}
             </NavLink>
           ))}
+          {isSuperAdmin && (
+            <NavLink to="/superadmin" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-primary hover:bg-primary/10">
+              <LayoutDashboard className="h-4 w-4" /> Super Admin →
+            </NavLink>
+          )}
         </nav>
         <div className="border-t border-border p-4">
           <p className="truncate text-sm font-medium">{user?.name}</p>
@@ -74,27 +87,16 @@ export function AdminLayout() {
             </Link>
             <nav className="flex gap-1 overflow-x-auto lg:hidden">
               {visibleNav.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.to === '/admin'}
-                  className={({ isActive }) =>
-                    cn(
-                      'whitespace-nowrap rounded-md px-2 py-1 text-xs',
-                      isActive ? 'bg-primary/15 text-primary' : 'text-muted-foreground',
-                    )
-                  }
-                >
-                  {t.admin[item.labelKey]}
+                <NavLink key={item.to} to={item.to} end={item.to === '/admin'} className={({ isActive }) => cn('whitespace-nowrap rounded-md px-2 py-1 text-xs', isActive ? 'bg-primary/15 text-primary' : 'text-muted-foreground')}>
+                  {item.label}
                 </NavLink>
               ))}
             </nav>
           </div>
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
-            <Button variant="outline" size="sm" onClick={logout}>
-              {t.nav.logout}
-            </Button>
+            <Link to="/account"><Button variant="outline" size="sm">{isAdmin() ? 'My Account' : ''}</Button></Link>
+            <Button variant="outline" size="sm" onClick={logout}>Logout</Button>
           </div>
         </header>
         <main className="flex-1 overflow-auto p-4 sm:p-6">

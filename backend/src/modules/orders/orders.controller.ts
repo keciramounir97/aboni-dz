@@ -54,6 +54,14 @@ export class OrdersController {
     return ok(await this.ordersService.listAdmin(status));
   }
 
+  @Get('admin/:id')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'super_admin')
+  @RequirePermissions('orders')
+  async adminOne(@Param('id', ParseIntPipe) id: number) {
+    return ok(await this.ordersService.adminOne(id));
+  }
+
   @Patch('admin/:id/review')
   @UseGuards(RolesGuard)
   @Roles('admin', 'super_admin')

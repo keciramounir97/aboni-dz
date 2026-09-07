@@ -64,6 +64,12 @@ export class OrdersService {
     return q;
   }
 
+  async adminOne(id: number) {
+    const order = await Order.query().findById(id).withGraphFetched('[product, user]');
+    if (!order) throw new NotFoundException({ success: false, message: 'Order not found' });
+    return order;
+  }
+
   async submitProof(userId: number, id: number, payment_proof_url: string) {
     const order = await this.myOrder(userId, id);
     if (!['awaiting_payment', 'pending', 'rejected'].includes(order.status)) {
